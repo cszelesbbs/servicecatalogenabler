@@ -1,0 +1,26 @@
+no_go_accounts: [
+  "863266785550"
+]
+no_go_regions: [
+    "ap-east-1",
+    "me-south-1"
+]
+
+target_regions: [
+    "eu-west-1"
+]
+
+portfolio_name: "isen1-portfolio"
+product_name: "servicecatalog-deployer"
+
+role_for_product_install: "ScDeployerBananaRole"
+
+aws_service_name: config
+
+workers_number: 1
+
+tags:
+  - Key: 'CCOEBaseline'
+    Value:  'True'
+
+dry_run: True

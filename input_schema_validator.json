@@ -1,0 +1,74 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "portfolio_name",
+    "product_name"
+  ],
+  "properties": {
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Key": {
+            "type": "string"
+          },
+          "Value": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "workers_number": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 20
+    },
+    "no_go_accounts": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[0-9]+$"
+      }
+    },
+    "no_go_regions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/aws_region"
+      }
+    },
+    "target_regions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/aws_region"
+      }
+    },
+    "aws_service_name": {
+      "type": "string",
+      "pattern": "^[a-zA-Z]+$"
+    },
+    "portfolio_name": {
+      "type": "string",
+      "pattern": "^[0-9a-zA-Z-_]+$"
+    },
+    "product_name": {
+      "type": "string",
+      "pattern": "^[0-9a-zA-Z-_]+$"
+    },
+    "role_for_product_install": {
+      "type": "string",
+      "pattern": "^[0-9a-zA-Z-_]+$"
+    },
+    "dry_run": {
+      "type": "boolean"
+    }
+  },
+  "definitions": {
+    "aws_region": {
+      "type": "string",
+      "pattern": "^[a-z]{2}-[a-z]{2,15}-[1-9]{1,2}$"
+    }
+  }
+}

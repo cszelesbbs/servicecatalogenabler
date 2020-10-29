@@ -1,0 +1,19 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - pip install pyyaml jsonschema pytest
+  build:
+    commands:
+      - export SC_ENABLER_CONF=$CODEBUILD_SRC_DIR_SC_ENABLER_CONF/servicecatalog_product_enabler_conf.yml
+      - export PRJ_ROOT_FOLDER=$CODEBUILD_SRC_DIR
+      - python -m pytest --junitxml=$CODEBUILD_SRC_DIR/reports/input_params.xml -o junit_family=xunit1 test_validate_input_file.py
+      - python service_catalog_product_enabler_init.py
+      - python service_catalog_product_enabler_launcher.py
+
+reports:
+  pytest_reports:
+    files:
+      - "*"
+    base-directory: $CODEBUILD_SRC_DIR/reports
+    file-format: JunitXml

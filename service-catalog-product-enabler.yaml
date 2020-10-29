@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CodeBuild project to enable ServiceCatalog products
+Resources:
+  ServiceCatalogProductEnablerCodeCommit:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryDescription: ServiceCatalog product enabler configuration file
+      RepositoryName: ServiceCatalogProductEnabler
+  ServiceCatalogProductEnablerCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: ServiceCatalogProductEnabler
+      ServiceRole: !GetAtt ServiceCatalogProductEnablerCodeBuildRole.Arn
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_LARGE
+        Image: aws/codebuild/standard:4.0
+      Source:
+        Type: GITHUB
+        Location: https://github.com/gabriele-l/ServiceCatalogProductEnabler.git
+        BuildSpec: buildspec.yml
+      SourceVersion: refs/heads/master
+      SecondarySources:
+      - Type: CODECOMMIT
+        Location: !GetAtt ServiceCatalogProductEnablerCodeCommit.CloneUrlHttp
+        SourceIdentifier: SC_ENABLER_CONF
+      SecondarySourceVersions:
+      - SourceIdentifier: SC_ENABLER_CONF
+        SourceVersion: refs/heads/master
+
+      Artifacts:
+        Type: NO_ARTIFACTS
+      LogsConfig:
+        CloudWatchLogs:
+          GroupName: !Ref ServiceCatalogProductEnablerLogGroup
+          Status: ENABLED
+          StreamName: !Ref ServiceCatalogProductEnablerLogStream
+
+  ServiceCatalogProductEnablerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: ServiceCatalogProductEnabler
+      RetentionInDays: 14
+
+  ServiceCatalogProductEnablerLogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName: !Ref ServiceCatalogProductEnablerLogGroup
+      LogStreamName: ServiceCatalogProductEnablerLogStream
+
+  ServiceCatalogProductEnablerCodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ServiceCatalogProductEnablerCodeBuildRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - codebuild.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Description: ServiceCatalog enabler
+      Path: /
+      Policies:
+        - PolicyName: ServiceCatalog
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                - dynamodb:DescribeTable
+                - dynamodb:CreateTable
+                - dynamodb:UpdateItem
+                - dynamodb:PutItem
+                - dynamodb:Scan
+                Resource: !Join [ ":", [ "arn:aws:dynamodb", !Ref "AWS::Region", !Ref "AWS::AccountId", "table/service_catalog_product_enabler" ] ]
+              - Effect: Allow
+                Action:
+                - organizations:ListAccounts
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                - logs:PutLogEvents
+                - logs:CreateLogStream
+                Resource: !Join [ ":", [ "arn:aws:logs", !Ref "AWS::Region", !Ref "AWS::AccountId", "*" ] ]
+              - Effect: Allow
+                Action:
+                - codecommit:GetTree
+                - codecommit:GetBlob
+                - codecommit:GetReferences
+                - codecommit:GetCommit
+                - codecommit:GitPull
+                - codecommit:GetRepository
+                - codecommit:GetBranch
+                Resource: !GetAtt ServiceCatalogProductEnablerCodeCommit.Arn
+              - Effect: Allow
+                Action:
+                - codebuild:CreateReportGroup
+                - codebuild:CreateReport
+                - codebuild:BatchPutTestCases
+                - codebuild:UpdateReport
+                Resource: !Join [ ":", [ "arn:aws:codebuild", !Ref "AWS::Region", !Ref "AWS::AccountId", "report-group/ServiceCatalogProductEnabler-pytest_reports" ] ]
+              - Effect: Allow
+                Action:
+                - ec2:CreateReportGroup
+                - codebuild:CreateReport
+                - codebuild:BatchPutTestCases
+                - codebuild:UpdateReport
+                Resource: !Join [ ":", [ "arn:aws:codebuild", !Ref "AWS::Region", !Ref "AWS::AccountId", "report-group/ServiceCatalogProductEnabler-pytest_reports" ] ]
+              - Effect: Allow
+                Action:
+                - servicecatalog:ListPortfolios
+                - servicecatalog:SearchProductsAsAdmin
+                - servicecatalog:ProvisionProduct
+                - servicecatalog:DescribeProductAsAdmin
+                - servicecatalog:ListLaunchPaths
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                - sts:AssumeRole
+                Resource: "arn:aws:iam::*:role/ScDeployer*"
+
